@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="UBS Kids Cup 2026">
+<title>UBS Kids Cup 2026 - Moutier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0f1e; --surface:#111827; --card:#1a2235; --border:#2a3550;
+    --accent:#f97316; --green:#22c55e; --red:#ef4444;
+    --text:#f1f5f9; --muted:#64748b;
+    --font-head:'Bebas Neue',sans-serif; --font-body:'DM Sans',sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-body); min-height:100dvh; }
+
+  header {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:14px 20px; display:flex; align-items:center; gap:12px;
+    position:sticky; top:0; z-index:100;
+  }
+  .logo { font-family:var(--font-head); font-size:28px; letter-spacing:2px; color:var(--accent); line-height:1; }
+  .logo span { color:var(--text); }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--muted); margin-left:auto; transition:all .3s; }
+  .status-dot.ok  { background:var(--green); box-shadow:0 0 8px var(--green); }
+  .status-dot.err { background:var(--red); }
+
+  .wrap { padding:20px; max-width:480px; margin:0 auto; }
+
+  .section-title { font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+
+  input[type="text"], input[type="number"] {
+    width:100%; background:var(--card); border:1px solid var(--border);
+    border-radius:10px; color:var(--text); font-family:var(--font-body);
+    font-size:16px; padding:14px 16px; outline:none; transition:border-color .2s; margin-bottom:20px;
+  }
+  input:focus { border-color:var(--accent); }
+
+  .btn {
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:16px; border-radius:12px; border:none;
+    font-family:var(--font-head); font-size:20px; letter-spacing:2px;
+    cursor:pointer; transition:all .15s;
+  }
+  .btn:active { opacity:.85; transform:scale(.98); }
+  .btn-primary  { background:var(--accent); color:#fff; }
+  .btn-secondary{ background:var(--card); color:var(--text); border:1px solid var(--border); font-size:14px; padding:12px; }
+  .btn:disabled { opacity:.4; pointer-events:none; }
+
+  /* Dossard */
+  .bib-row { display:flex; gap:10px; margin-bottom:20px; }
+  .bib-row input { flex:1; margin-bottom:0; font-family:var(--font-head); font-size:32px; text-align:center; letter-spacing:4px; }
+  .btn-search { background:var(--accent); border:none; border-radius:10px; padding:0 18px; cursor:pointer; color:#fff; font-size:22px; }
+  .btn-search:active { opacity:.8; }
+
+  /* Athlete card */
+  .athlete-card {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:18px; margin-bottom:20px; display:none;
+    animation:slideUp .25s ease;
+  }
+  .athlete-card.visible { display:block; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .athlete-bib  { font-family:var(--font-head); font-size:48px; letter-spacing:4px; color:var(--accent); line-height:1; }
+  .athlete-name { font-size:22px; font-weight:600; margin-top:4px; }
+  .athlete-meta { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
+  .badge     { background:var(--border); border-radius:6px; padding:3px 10px; font-size:12px; font-weight:500; color:var(--muted); }
+  .badge.cat { background:rgba(249,115,22,.15); color:var(--accent); }
+
+  /* Résumé des résultats existants */
+  .results-summary { margin-top:14px; display:flex; flex-direction:column; gap:6px; }
+  .res-line {
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--surface); border-radius:8px; padding:8px 12px;
+    cursor:pointer; transition:background .15s; border:1px solid transparent;
+  }
+  .res-line:active { background:var(--border); }
+  .res-line:hover  { border-color:var(--border); }
+  .res-label { font-size:12px; color:var(--muted); font-weight:600; letter-spacing:1px; text-transform:uppercase; }
+  .res-val   { font-family:var(--font-head); font-size:16px; color:var(--text); letter-spacing:1px; }
+  .res-val.filled { color:var(--green); }
+
+  .not-found { text-align:center; padding:20px; color:var(--muted); font-size:14px; display:none; }
+  .not-found.visible { display:block; }
+  .loading-athlete { text-align:center; padding:16px; color:var(--muted); font-size:14px; display:none; }
+  .loading-athlete.visible { display:block; }
+
+  /* Discipline */
+  .disc-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px; }
+  .disc-btn {
+    background:var(--card); border:2px solid var(--border); border-radius:12px;
+    padding:14px 8px; color:var(--text); cursor:pointer;
+    font-family:var(--font-body); font-size:13px; font-weight:600;
+    text-align:center; transition:all .15s;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  .disc-btn .disc-icon { font-size:24px; }
+  .disc-btn .disc-sub  { font-size:11px; color:var(--muted); }
+  .disc-btn.selected { border-color:var(--accent); background:rgba(249,115,22,.12); color:var(--accent); }
+  .disc-btn.done     { border-color:var(--green); }
+  .disc-btn.done .disc-sub { color:var(--green); }
+  .disc-btn.disabled-disc { opacity:.4; pointer-events:none; }
+  .disc-btn:active { transform:scale(.96); }
+
+  /* Zone saisie */
+  .result-area {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:14px; padding:18px; margin-bottom:16px; display:none;
+  }
+  .result-area.visible { display:block; animation:slideUp .2s ease; }
+
+  .manual-row { display:flex; gap:10px; align-items:center; margin-bottom:16px; }
+  .manual-row input { flex:1; margin:0; font-family:var(--font-head); font-size:36px; text-align:center; letter-spacing:2px; }
+  .unit-label { font-family:var(--font-head); font-size:20px; color:var(--muted); min-width:40px; }
+
+  .spinner { width:20px; height:20px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; display:none; }
+  .spinner.visible { display:block; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  .toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+    background:var(--green); color:#fff;
+    font-family:var(--font-head); font-size:18px; letter-spacing:2px;
+    padding:14px 28px; border-radius:40px;
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+    z-index:1000; white-space:nowrap; box-shadow:0 8px 32px rgba(34,197,94,.3);
+  }
+  .toast.error { background:var(--red); box-shadow:0 8px 32px rgba(239,68,68,.3); }
+  .toast.show  { transform:translateX(-50%) translateY(0); }
+
+  .history-item {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px; margin-bottom:8px;
+    display:flex; justify-content:space-between; align-items:center; font-size:14px;
+  }
+  .hi-name { font-weight:600; }
+  .hi-val  { font-family:var(--font-head); font-size:18px; color:var(--accent); letter-spacing:1px; }
+  .hi-disc { color:var(--muted); font-size:12px; }
+  .empty-state { text-align:center; color:var(--muted); font-size:13px; padding:20px 0; }
+
+  .queue-banner {
+    background:rgba(251,146,60,.1); border:1px solid rgba(249,115,22,.3);
+    border-radius:10px; padding:10px 14px; margin-bottom:16px;
+    font-size:13px; color:#fb923c; display:none; align-items:center; gap:8px;
+  }
+  .queue-banner.visible { display:flex; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">UBS KIDS CUP <span>2026</span></div>
+  <div style="font-family:var(--font-body);font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">Moutier</div>
+  <div class="status-dot" id="statusDot"></div>
+</header>
+
+<div class="wrap">
+  <br>
+  <div class="queue-banner" id="queueBanner">⏳ <span id="queueCount">0</span> résultat(s) en attente de sync</div>
+
+  <!-- Dossard -->
+  <div class="section-title">Numéro de dossard</div>
+  <div class="bib-row">
+    <input type="text" id="bibInput" placeholder="Ex: 6" inputmode="numeric"
+           onkeydown="if(event.key==='Enter') searchAthlete()">
+    <button class="btn-search" onclick="searchAthlete()">🔍</button>
+  </div>
+
+  <div class="loading-athlete" id="loadingAthlete">⏳ Recherche...</div>
+  <div class="not-found" id="notFound">🔍 Dossard introuvable</div>
+
+  <!-- Athlete card -->
+  <div class="athlete-card" id="athleteCard">
+    <div class="athlete-bib" id="cardBib"></div>
+    <div class="athlete-name" id="cardName"></div>
+    <div class="athlete-meta">
+      <span class="badge cat" id="cardCat"></span>
+      <span class="badge" id="cardClub"></span>
+    </div>
+    <!-- Résumé des résultats -->
+    <div class="results-summary" id="resultsSummary"></div>
+  </div>
+
+  <!-- Discipline -->
+  <div id="disciplineSection" style="display:none">
+    <div class="section-title">Discipline</div>
+    <div class="disc-grid">
+      <button class="disc-btn" onclick="selectDisc('60m')" id="disc_60m">
+        <span class="disc-icon">🏃</span>60m
+        <span class="disc-sub" id="sub_60m"></span>
+      </button>
+      <button class="disc-btn" onclick="selectDisc('longueur')" id="disc_longueur">
+        <span class="disc-icon">📏</span>Longueur
+        <span class="disc-sub" id="sub_longueur"></span>
+      </button>
+      <button class="disc-btn" onclick="selectDisc('balle')" id="disc_balle">
+        <span class="disc-icon">🎯</span>Balle 200g
+        <span class="disc-sub" id="sub_balle"></span>
+      </button>
+    </div>
+
+    <!-- Zone 60m -->
+    <div class="result-area" id="zone_60m">
+      <div class="section-title">Saisie — 60m</div>
+      <div class="manual-row">
+        <input type="number" id="input60m" placeholder="—" step="0.01" min="0" inputmode="decimal">
+        <span class="unit-label">sec</span>
+      </div>
+      <button class="btn btn-primary" onclick="submitResult()">
+        ENREGISTRER <div class="spinner" id="spinner60m"></div>
+      </button>
+    </div>
+
+    <!-- Zone Longueur -->
+    <div class="result-area" id="zone_longueur">
+      <div class="section-title" id="longueurTitle">Saisie — Longueur Essai 1</div>
+      <div class="manual-row">
+        <input type="number" id="inputLongueur" placeholder="—" step="0.01" min="0" inputmode="decimal">
+        <span class="unit-label">m</span>
+      </div>
+      <button class="btn btn-primary" onclick="submitResult()">
+        ENREGISTRER <div class="spinner" id="spinnerLongueur"></div>
+      </button>
+    </div>
+
+    <!-- Zone Balle -->
+    <div class="result-area" id="zone_balle">
+      <div class="section-title">Saisie — Balle 200g</div>
+      <div class="manual-row">
+        <input type="number" id="inputBalle" placeholder="—" step="0.01" min="0" inputmode="decimal">
+        <span class="unit-label">m</span>
+      </div>
+      <button class="btn btn-primary" onclick="submitResult()">
+        ENREGISTRER <div class="spinner" id="spinnerBalle"></div>
+      </button>
+    </div>
+  </div>
+
+  <br>
+  <div class="section-title">Derniers enregistrements</div>
+  <div id="historyList"><div class="empty-state">Aucun résultat encore saisi</div></div>
+  <br><br>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ CONFIG FIXE ══
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxw3aGtcj2i3YGJdAIW8wq3JefsB5I35vg_Rwm28RErIStRB7NVI82CH2ZpFIc48kEfAw/exec';
+
+// ══ STATE ══
+let currentAthlete = null;
+let currentDisc    = null;
+let history        = [];
+let pendingQueue   = [];
+
+// ══ INIT ══
+function init() {
+  const savedH = localStorage.getItem('history');      if (savedH) history      = JSON.parse(savedH);
+  const savedQ = localStorage.getItem('pendingQueue'); if (savedQ) pendingQueue = JSON.parse(savedQ);
+  renderHistory(); updateQueueBanner();
+  updateStatusDot();
+  window.addEventListener('online',  () => { updateStatusDot(); trySyncQueue(); });
+  window.addEventListener('offline', () => updateStatusDot());
+  trySyncQueue();
+}
+
+function updateStatusDot() {
+  document.getElementById('statusDot').className = 'status-dot ' + (navigator.onLine ? 'ok' : 'err');
+}
+
+// ══ RECHERCHE ══
+async function searchAthlete() {
+  const val = document.getElementById('bibInput').value.trim();
+  if (!val) return;
+
+  document.getElementById('athleteCard').classList.remove('visible');
+  document.getElementById('notFound').classList.remove('visible');
+  document.getElementById('disciplineSection').style.display = 'none';
+  hideAllZones(); resetDiscBtns();
+  currentAthlete = null; currentDisc = null;
+  document.getElementById('loadingAthlete').classList.add('visible');
+
+  try {
+    const res = await callScript({ action:'getAthlete', dossard: val });
+    document.getElementById('loadingAthlete').classList.remove('visible');
+
+    if (res.ok && res.athlete) {
+      currentAthlete = res.athlete;
+      document.getElementById('cardBib').textContent  = res.athlete.dossard;
+      document.getElementById('cardName').textContent = res.athlete.prenom + ' ' + res.athlete.nom;
+      document.getElementById('cardCat').textContent  = res.athlete.categorie;
+      document.getElementById('cardClub').textContent = res.athlete.club || '—';
+      renderResultsSummary();
+      updateDiscButtons();
+      document.getElementById('athleteCard').classList.add('visible');
+      document.getElementById('disciplineSection').style.display = 'block';
+    } else {
+      document.getElementById('notFound').classList.add('visible');
+    }
+  } catch(e) {
+    document.getElementById('loadingAthlete').classList.remove('visible');
+    document.getElementById('notFound').classList.add('visible');
+    showToast('Erreur réseau', true);
+  }
+}
+
+// Affiche l'état de chaque discipline sous le nom
+function renderResultsSummary() {
+  const a        = currentAthlete;
+  const el       = document.getElementById('resultsSummary');
+  const e        = a.essais_longueur || [null,null,null];
+  const done60m  = a.res_60m   != null;
+  const doneBalle= a.res_balle != null;
+
+  const lines = [
+    { label:'60m',           val: done60m   ? a.res_60m+' s'   : 'À saisir', filled: done60m,     fn: ()=>quickSelect('60m') },
+    { label:'Long. Essai 1', val: e[0]!=null ? e[0]+' m'        : 'À saisir', filled: e[0]!=null,  fn: ()=>quickSelectEssai(0) },
+    { label:'Long. Essai 2', val: e[1]!=null ? e[1]+' m'        : 'À saisir', filled: e[1]!=null,  fn: ()=>quickSelectEssai(1) },
+    { label:'Long. Essai 3', val: e[2]!=null ? e[2]+' m'        : 'À saisir', filled: e[2]!=null,  fn: ()=>quickSelectEssai(2) },
+    { label:'Balle 200g',    val: doneBalle  ? a.res_balle+' m' : 'À saisir', filled: doneBalle,   fn: ()=>quickSelect('balle') },
+  ];
+
+  el.innerHTML = '';
+  lines.forEach(line => {
+    const div = document.createElement('div');
+    div.className = 'res-line';
+    div.innerHTML = '<span class="res-label">'+line.label+'</span><span class="res-val '+(line.filled?'filled':'')+'">'+line.val+'</span>';
+    div.addEventListener('click', line.fn);
+    el.appendChild(div);
+  });
+}
+
+function updateDiscButtons() {
+  const a = currentAthlete;
+  const e = a.essais_longueur || [null,null,null];
+  const longDone = e.filter(x=>x!==null).length;
+
+  // 60m
+  const b60 = document.getElementById('disc_60m');
+  const s60 = document.getElementById('sub_60m');
+  if (a.res_60m != null) { b60.classList.add('done'); s60.textContent='✓ '+a.res_60m+' s'; }
+  else { b60.classList.remove('done'); s60.textContent=''; }
+
+  // Longueur
+  const bLong = document.getElementById('disc_longueur');
+  const sLong = document.getElementById('sub_longueur');
+  if (longDone >= 3) { bLong.classList.add('done','disabled-disc'); sLong.textContent='✓ 3/3'; }
+  else { bLong.classList.remove('done','disabled-disc'); sLong.textContent='Essai '+(longDone+1)+'/3'; }
+
+  // Balle
+  const bBalle = document.getElementById('disc_balle');
+  const sBalle = document.getElementById('sub_balle');
+  if (a.res_balle != null) { bBalle.classList.add('done'); sBalle.textContent='✓ '+a.res_balle+' m'; }
+  else { bBalle.classList.remove('done'); sBalle.textContent=''; }
+}
+
+// ══ DISCIPLINE ══
+function selectDisc(disc) {
+  if (disc==='longueur' && currentAthlete) {
+    const e    = currentAthlete.essais_longueur || [null,null,null];
+    const done = e.filter(x=>x!==null).length;
+    if (done>=3) { showToast('3 essais déjà enregistrés', true); return; }
+    document.getElementById('longueurTitle').textContent = 'Saisie — Longueur Essai '+(done+1);
+  }
+  currentDisc = disc;
+  resetDiscBtns();
+  document.getElementById('disc_'+disc).classList.add('selected');
+  hideAllZones();
+  document.getElementById('zone_'+disc).classList.add('visible');
+}
+function resetDiscBtns() { ['60m','longueur','balle'].forEach(d=>document.getElementById('disc_'+d).classList.remove('selected')); }
+function hideAllZones()  { ['60m','longueur','balle'].forEach(d=>document.getElementById('zone_'+d).classList.remove('visible')); }
+
+// ══ SUBMIT ══
+async function submitResult() {
+  if (!currentAthlete || !currentDisc) { showToast('Sélectionne un athlète et une discipline', true); return; }
+  let valeur='', spinnerId='';
+  if      (currentDisc==='60m')      { valeur=document.getElementById('input60m').value.trim();      spinnerId='spinner60m'; }
+  else if (currentDisc==='longueur') { valeur=document.getElementById('inputLongueur').value.trim(); spinnerId='spinnerLongueur'; }
+  else                               { valeur=document.getElementById('inputBalle').value.trim();    spinnerId='spinnerBalle'; }
+  if (valeur === '') { showToast('Saisis un résultat', true); return; }
+
+  // Confirmation si valeur existante (sauf longueur)
+  if (currentDisc !== 'longueur') {
+    let existante = null;
+    if (currentDisc === '60m')    existante = currentAthlete.res_60m;
+    else if (currentDisc === 'balle') existante = currentAthlete.res_balle;
+    if (existante !== null) {
+      const ok = await showConfirm(`Remplacer ${existante} par ${valeur} ?`);
+      if (!ok) return;
+    }
+  }
+
+  const entry = {
+    id: Date.now(),
+    dossard: currentAthlete.dossard,
+    nom: currentAthlete.nom, prenom: currentAthlete.prenom,
+    categorie: currentAthlete.categorie,
+    discipline: currentDisc, valeur, synced: false,
+    forceEssaiIdx: (currentDisc==='longueur') ? (currentAthlete._forceEssaiIdx !== undefined ? currentAthlete._forceEssaiIdx : null) : null
+  };
+
+  history.unshift(entry);
+  if (history.length>20) history.pop();
+  localStorage.setItem('history', JSON.stringify(history));
+  renderHistory();
+
+  document.getElementById(spinnerId).classList.add('visible');
+  const ok = await sendEntry(entry);
+  document.getElementById(spinnerId).classList.remove('visible');
+
+  if (ok) {
+    entry.synced = true;
+    localStorage.setItem('history', JSON.stringify(history));
+    showToast('✓ Enregistré !');
+    // Recharger les données depuis le Sheet pour avoir l'état exact
+    const bib = currentAthlete.dossard;
+    try {
+      const res = await callScript({ action:'getAthlete', dossard: bib });
+      if (res.ok && res.athlete) {
+        currentAthlete = res.athlete;
+        renderResultsSummary();
+        updateDiscButtons();
+      }
+    } catch(e) {
+      // Si pas de réseau, mettre à jour localement
+      if (currentDisc==='60m')        currentAthlete.res_60m   = parseFloat(valeur);
+      else if (currentDisc==='balle') currentAthlete.res_balle = parseFloat(valeur);
+      else if (currentDisc==='longueur') {
+        const fi = currentAthlete._forceEssaiIdx;
+        if (fi === 0 || fi === 1 || fi === 2) currentAthlete.essais_longueur[fi] = parseFloat(valeur);
+        else {
+          const idx = (currentAthlete.essais_longueur||[null,null,null]).findIndex(e=>e===null);
+          if (idx!==-1) currentAthlete.essais_longueur[idx] = parseFloat(valeur);
+        }
+      }
+      renderResultsSummary();
+      updateDiscButtons();
+    }
+  } else {
+    pendingQueue.push(entry);
+    localStorage.setItem('pendingQueue', JSON.stringify(pendingQueue));
+    showToast('Sauvegardé hors ligne ⚠', false);
+  }
+  updateQueueBanner(); renderHistory();
+
+  // Reset champ, garder athlète affiché
+  document.getElementById('input60m').value='';
+  document.getElementById('inputLongueur').value='';
+  document.getElementById('inputBalle').value='';
+  hideAllZones(); resetDiscBtns(); currentDisc=null;
+}
+
+async function sendEntry(entry) {
+  if (!navigator.onLine) return false;
+  try {
+    const res = await callScript({ action:'write', entry });
+    return res.ok;
+  } catch(e) { return false; }
+}
+
+async function trySyncQueue() {
+  if (pendingQueue.length===0||!navigator.onLine) return;
+  const toSend=[...pendingQueue]; const failed=[];
+  for (const e of toSend) {
+    const ok = await sendEntry(e);
+    if (!ok) failed.push(e);
+    else { const h=history.find(x=>x.id===e.id); if(h) h.synced=true; }
+  }
+  pendingQueue=failed;
+  localStorage.setItem('pendingQueue', JSON.stringify(pendingQueue));
+  localStorage.setItem('history', JSON.stringify(history));
+  updateQueueBanner(); renderHistory();
+  if (failed.length<toSend.length) showToast('✓ Sync effectuée');
+}
+
+function updateQueueBanner() {
+  const b=document.getElementById('queueBanner');
+  if (pendingQueue.length>0) { b.classList.add('visible'); document.getElementById('queueCount').textContent=pendingQueue.length; }
+  else b.classList.remove('visible');
+}
+
+async function callScript(payload) {
+  const url = SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+  const r   = await fetch(url, { redirect:'follow' });
+  return await r.json();
+}
+
+// ══ HISTORY ══
+function renderHistory() {
+  const el=document.getElementById('historyList');
+  if (history.length===0) { el.innerHTML='<div class="empty-state">Aucun résultat encore saisi</div>'; return; }
+  const unit={'60m':'s','longueur':'m','balle':'m'};
+  const label={'60m':'60m','longueur':'Longueur','balle':'Balle 200g'};
+  el.innerHTML=history.slice(0,10).map(h=>`
+    <div class="history-item">
+      <div>
+        <div class="hi-name">${h.prenom} ${h.nom}</div>
+        <div class="hi-disc">${label[h.discipline]||h.discipline} · ${h.categorie} ${h.synced?'✓':'⏳'}</div>
+      </div>
+      <div class="hi-val">${h.valeur} ${unit[h.discipline]||''}</div>
+    </div>`).join('');
+}
+
+function showToast(msg,isError=false) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast'+(isError?' error':'');
+  setTimeout(()=>t.classList.add('show'),10);
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+
+
+// ══ QUICK SELECT depuis le résumé ══
+async function quickSelect(disc) {
+  // Vérifier si valeur existante
+  let existante = null;
+  if (disc === '60m')   existante = currentAthlete.res_60m   !== undefined ? currentAthlete.res_60m   : null;
+  if (disc === 'balle') existante = currentAthlete.res_balle !== undefined ? currentAthlete.res_balle : null;
+
+  if (existante !== null) {
+    const ok = await showConfirm('Modifier ' + existante + ' ' + (disc==='60m'?'s':'m') + ' ?');
+    if (!ok) return;
+  }
+
+  // S'assurer que disciplineSection est visible
+  document.getElementById('disciplineSection').style.display = 'block';
+
+  currentDisc = disc;
+  resetDiscBtns();
+  document.getElementById('disc_'+disc).classList.add('selected');
+  hideAllZones();
+  document.getElementById('zone_'+disc).classList.add('visible');
+
+  const inputId = disc==='60m' ? 'input60m' : disc==='balle' ? 'inputBalle' : 'inputLongueur';
+  const input = document.getElementById(inputId);
+  if (input) input.value = existante !== null ? existante : '';
+
+  setTimeout(() => {
+    document.getElementById('zone_'+disc).scrollIntoView({ behavior:'smooth', block:'center' });
+    if (input) input.focus();
+  }, 150);
+}
+
+async function quickSelectEssai(idx) {
+  const e = currentAthlete ? (currentAthlete.essais_longueur || [null,null,null]) : [null,null,null];
+
+  if (e[idx] !== null) {
+    // Essai existant — demander confirmation
+    const ok = await showConfirm(`Modifier l'essai ${idx+1} (${e[idx]} m) ?`);
+    if (!ok) return;
+    currentAthlete._forceEssaiIdx = idx;
+  } else {
+    // Vérifier que les essais précédents sont saisis
+    for (let k = 0; k < idx; k++) {
+      if (e[k] === null) { showToast(`Saisis d'abord l'essai ${k+1}`, true); return; }
+    }
+    currentAthlete._forceEssaiIdx = null;
+  }
+
+  // S'assurer que disciplineSection est visible
+  document.getElementById('disciplineSection').style.display = 'block';
+
+  currentDisc = 'longueur';
+  resetDiscBtns();
+  document.getElementById('disc_longueur').classList.add('selected');
+  hideAllZones();
+  document.getElementById('zone_longueur').classList.add('visible');
+  document.getElementById('longueurTitle').textContent = 'Saisie — Longueur Essai ' + (idx+1);
+  const input = document.getElementById('inputLongueur');
+  input.value = e[idx] !== null ? e[idx] : '';
+  setTimeout(() => {
+    document.getElementById('zone_longueur').scrollIntoView({ behavior:'smooth', block:'center' });
+    input.focus();
+  }, 150);
+}
+
+// ══ CONFIRM DIALOG ══
+function showConfirm(msg) {
+  return new Promise(resolve => {
+    // Supprimer dialog existant
+    const old = document.getElementById('confirmDialog');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'confirmDialog';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    overlay.innerHTML = `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:320px;width:100%;animation:slideUp .2s ease;">
+        <div style="font-size:13px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Confirmation</div>
+        <div style="font-size:18px;font-weight:600;margin-bottom:20px;">${msg}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <button id="confirmNo"  style="padding:14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:var(--font-head);font-size:18px;letter-spacing:1px;cursor:pointer;">ANNULER</button>
+          <button id="confirmYes" style="padding:14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-family:var(--font-head);font-size:18px;letter-spacing:1px;cursor:pointer;">CONFIRMER</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('confirmYes').onclick = () => { overlay.remove(); resolve(true); };
+    document.getElementById('confirmNo').onclick  = () => { overlay.remove(); resolve(false); };
+  });
+}
+
+setInterval(()=>{ if(pendingQueue.length>0) trySyncQueue(); },30000);
+init();
+</script>
+</body>
+</html>

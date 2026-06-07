@@ -391,16 +391,22 @@ async function submitResult() {
   // Validation des limites et décimales
   const num = parseFloat(valeur);
   if (isNaN(num)) { showToast('Valeur invalide', true); return; }
-  // Vérifier format exact : 2 décimales obligatoires (sauf 0 pour mordu)
-  if (num > 0) {
-    // Doit avoir exactement 2 décimales et le dernier chiffre != 0
-    const parts = valeur.replace(',', '.').split('.');
-    if (parts.length !== 2 || parts[1].length !== 2) {
-      showToast('Format requis : ex. 12.26 ou 2.44', true); return;
-    }
-    if (parts[1].endsWith('0')) {
-      showToast('Résultat arrondi non autorisé !', true); return;
-    }
+  // Normaliser : remplacer virgule par point
+  valeur = valeur.replace(',', '.');
+  const num2 = parseFloat(valeur);
+  if (isNaN(num2)) { showToast('Valeur invalide', true); return; }
+  // Vérifier limites crédibles
+  if (currentDisc === '60m'      && (num2 < 5 || num2 > 59.99)) { showToast('60m : valeur entre 5 et 59', true); return; }
+  if (currentDisc === 'longueur' && (num2 < 0 || num2 > 9.99))  { showToast('Longueur : valeur entre 0 et 9.99', true); return; }
+  if (currentDisc === 'balle'    && (num2 < 0 || num2 > 99))    { showToast('Balle : valeur entre 0 et 99', true); return; }
+  // Compléter avec .00 si pas de décimales, ou 1 décimale → ajouter un 0
+  const parts = valeur.split('.');
+  if (parts.length === 1) {
+    valeur = valeur + '.00';
+  } else if (parts[1].length === 1) {
+    valeur = valeur + '0';
+  } else {
+    valeur = parts[0] + '.' + parts[1].substring(0, 2);
   }
   if (currentDisc === '60m'      && (num < 0 || num > 59.59)) { showToast('60m : entre 0 et 59.59', true); return; }
   if (currentDisc === 'longueur' && (num < 0 || num > 9.99))  { showToast('Longueur : entre 0 et 9.99', true); return; }
